@@ -1,4 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using Gtk;
 using WebKit;
@@ -7,6 +12,14 @@ namespace test;
 
 class MainWindow : Window
 {
+    class Args
+    {
+        public int Id { get; set; }
+        public string Method { get; set; }
+        public ExpandoObject Paramters { get; set; }
+        public string Namespace { get; set; }
+    }
+
     private readonly WebView _webView;
     private readonly StaticFileServer _server;
 
@@ -45,40 +58,58 @@ class MainWindow : Window
 
         contentManager.AddScript(script);
         contentManager.RegisterScriptMessageHandler(messageHandlerName);
-        contentManager.ScriptMessageReceived += (o, args) =>
+        contentManager.ScriptMessageReceived += (o, e) =>
         {
-            // var t = typeof(ExposedMethods);
-            // foreach (var method in t.GetMethods()) {
-            //     // if()
-            // }
+            if (e.JsResult == null && !e.JsResult.JsValue.IsString)
+                return;
 
-            // var json = args.Message.ToString(); // algo como "{\"id\":1,\"method\":\"calcular\",\"args\":[7,6]}"
+            var args = JsonSerializer.Deserialize<Args>(e.JsResult.JsValue.ToString());
 
-            // var parsed = JsonDocument.Parse(json);
-            // var root = parsed.RootElement;
+            var assembly = Assembly.GetExecutingAssembly();
+            var type = assembly.GetType(args.Namespace);
+            var instance = Activator.CreateInstance(type);
+            MethodInfo method = type.GetMethod(args.Method);
 
-            // int id = root.GetProperty("id").GetInt32();
-            // string method = root.GetProperty("method").GetString();
+            var parameters = args
+                .Paramters.Select(x => ConvertJsonElement((JsonElement)x.Value))
+                .ToArray();
 
-            // int a = root.GetProperty("args")[0].GetInt32();
-            // int b = root.GetProperty("args")[1].GetInt32();
-            // int resultado = a * b;
+            var result = method.Invoke(instance, [.. parameters]);
 
-            string js = $"__resolveNativeCall(1,\"I'm JS\");";
+            if (result is string)
+                result = $"\"{result}\"";
+
+            string js = $"__resolveNativeCall({args.Id},{result});";
             _webView.RunJavascript(js, null, null);
-            return;
-
-            var value = args.JsResult?.JsValue;
-            if (value is { IsString: true } v)
-                Console.WriteLine(
-                    $"{nameof(contentManager.ScriptMessageReceived)}:\t{nameof(JavascriptResult.JsValue)}\t{v?.ToString()}"
-                );
-            args.RetVal = "Teste C#";
         };
 
         Child = _webView;
         Child.Visible = true;
         DeleteEvent += Window_DeleteEvent;
+    }
+
+    private static object ConvertJsonElement(JsonElement element)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.String:
+                return element.GetString();
+            case JsonValueKind.Number:
+                if (element.TryGetInt64(out long l))
+                    return l;
+                else if (element.TryGetDouble(out double d))
+                    return d;
+                else
+                    throw new InvalidOperationException("Número em formato desconhecido.");
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+                return element.GetBoolean();
+            case JsonValueKind.Null:
+            case JsonValueKind.Undefined:
+                return null;
+            default:
+                throw new InvalidOperationException($"Tipo não primitivo: {element.ValueKind}");
+        }
     }
 
     private void Window_DeleteEvent(object sender, DeleteEventArgs a)

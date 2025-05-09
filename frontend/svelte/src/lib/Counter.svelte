@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { callNative } from "../interop/methods";
+  import { sendMessageThroughCSharp } from "../csharp/ExposedMethods";
   let count: number = $state(0);
-  const increment = () => {
+  const increment = async () => {
     count += 1;
-    callNative("I'm JS", "I'm JS").then((x) => console.log(x));
-    // sendMessageAsync();
+    let message = await sendMessageThroughCSharp("I'm JS");
+    console.log(message);
   };
 </script>
 
