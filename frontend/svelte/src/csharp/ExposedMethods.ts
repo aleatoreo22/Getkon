@@ -1,4 +1,4 @@
-const namespace = "test.ExposedMethods";
+const namespace = "Getkon.ExposedMethods";
 import { callNative } from "../interop/interop";
 export async function sendMessageThroughCSharp(
   message: string

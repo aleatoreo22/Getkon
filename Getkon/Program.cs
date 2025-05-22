@@ -1,7 +1,7 @@
 using System;
 using Gtk;
 
-namespace test
+namespace Getkon
 {
     class Program
     {

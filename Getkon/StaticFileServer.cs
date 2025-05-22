@@ -5,7 +5,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace test;
+namespace Getkon;
 
 public class StaticFileServer : IDisposable
 {
