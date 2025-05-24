@@ -14,25 +14,6 @@
       "cwd": "${workspaceFolder}/Getkon",
       "console": "internalConsole",
       "stopAtEntry": false
-    },
-    {
-      "name": "Attach to Electron Renderer",
-      "type": "chrome",
-      "request": "attach",
-      "port": 9222,
-      "webRoot": "${workspaceFolder}"
-    },
-    {
-      "command": "npm run dev",
-      // "name": "Run development server",
-      "request": "launch",
-      "type": "node-terminal",
-
-      // "command": "npm run dev",
-      // "request": "launch",
-      // "type": "node-terminal",
-      "name": "Frontend Launch (only)"
-      // "cwd": "${workspaceFolder}/frontend/svelte",
     }
   ],
   "compounds": [
